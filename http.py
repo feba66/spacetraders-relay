@@ -33,19 +33,29 @@ class Logger():
 
         ch = logging.StreamHandler()
         ch.setLevel(logging.INFO)
-        
         fh = logging.FileHandler(os.getenv("WORKING_FOLDER")+"ST-Relay.log", encoding="utf-8")
-            
         fh.setLevel(logging.DEBUG)
 
         ch.setFormatter(formatter)
         fh.setFormatter(formatter)
-
         self.logger.addHandler(fh)
         self.logger.addHandler(ch)
+    
     def info(self,msg):
         with self.lock:
             self.logger.info(msg)
+    def debug(self,msg):
+        with self.lock:
+            self.logger.debug(msg)
+    def warning(self,msg):
+        with self.lock:
+            self.logger.warning(msg)
+    def error(self,msg):
+        with self.lock:
+            self.logger.error(msg)
+    def critical(self,msg):
+        with self.lock:
+            self.logger.critical(msg)
 logger = Logger()
 class myHandler(http.server.BaseHTTPRequestHandler):
     req_lock = Lock()
