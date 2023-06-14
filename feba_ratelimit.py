@@ -6,6 +6,9 @@ from threading import Lock, Semaphore
 import time
 from typing import Any
 
+"""Author: feba66
+Description: A python implementation of a thread safe ratelimiting decorator.
+"""
 
 class Limiter:
     points: int
@@ -52,7 +55,6 @@ class Limiter:
                 if not self.check_reset():
                     self.sleep()
 
-            # print(f"{datetime.utcnow()} ", end="")
             r = func(*args, **kwargs)
             return r
         return wrapper
@@ -77,35 +79,7 @@ class BurstyLimiter:
                 if not self.static.check_reset() and not self.burst.check_reset():
                     time.sleep(max(min(self.static.time_to_reset(), self.burst.time_to_reset()) * .95, 0))
 
-            # print(f"{datetime.utcnow()} ", end="")
             r = func(*args, **kwargs)
             return r
         return wrapper
 
-# @Limiter()
-# def my_func(string):
-#     print(string)
-# @BurstyLimiter(Limiter(2,1),Limiter(10,10))
-# def my_func2(string):
-#     print(string)
-
-
-if __name__ == '__main__':
-
-    # Single sequential test
-    # for i in range(120):
-    #     my_func2(f"{i}")
-
-    # single process multiple threads - thread safe
-    # with ThreadPoolExecutor(5) as pool:
-    #     future = {pool.submit(my_func2,str(i)) for i in range(120)}
-    #     for f in as_completed(future):
-    #         try:
-    #             f.result()
-    #         except:
-    #             pass
-
-    # multiple processes - not process safe yet
-    # with Pool(5) as p:
-    #     print(p.map(my_func2, [str(i) for i in range(120)]))
-    pass

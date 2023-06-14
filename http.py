@@ -3,9 +3,13 @@ import datetime
 from http import HTTPStatus
 import http.server
 import json
+import logging
+import os
 import socketserver
 import sys
 from threading import Lock
+import threading
+from dotenv import find_dotenv, load_dotenv
 import requests
 from feba_ratelimit import BurstyLimiter, Limiter
 
@@ -16,12 +20,37 @@ session = requests.session()
 def req_and_log(url: str, method: str, data=None, json=None):
     r = session.request(method, SERVER_URL + url, data=data, json=json)
     return r
+class Logger():
+    logger: logging.Logger
+    lock: Lock
+    def __init__(self) -> None:
+        self.lock=Lock()
+        load_dotenv(find_dotenv(".env"))
+        self.logger = logging.getLogger("ST-Relay" + str(threading.current_thread().native_id))
+        self.logger.setLevel(logging.DEBUG)
 
+        formatter = logging.Formatter("%(asctime)s - %(thread)d - %(name)s - %(levelname)s - %(message)s")
 
+        ch = logging.StreamHandler()
+        ch.setLevel(logging.INFO)
+        
+        fh = logging.FileHandler(os.getenv("WORKING_FOLDER")+"ST-Relay.log", encoding="utf-8")
+            
+        fh.setLevel(logging.DEBUG)
+
+        ch.setFormatter(formatter)
+        fh.setFormatter(formatter)
+
+        self.logger.addHandler(fh)
+        self.logger.addHandler(ch)
+    def info(self,msg):
+        with self.lock:
+            self.logger.info(msg)
+logger = Logger()
 class myHandler(http.server.BaseHTTPRequestHandler):
     req_lock = Lock()
 
-    def req(self, path, method, data=None, json=None):
+    def req(self, path:str, method:str, data=None, json=None):
         with self.req_lock:  # thanks to threads we need to tidy up a bit with this lock
             if "Authorization" in self.headers.keys():
                 session.headers.update({"Authorization": self.headers.get("Authorization")})
@@ -30,7 +59,11 @@ class myHandler(http.server.BaseHTTPRequestHandler):
             r = req_and_log(path, method, data, json)
             while r.status_code in [408, 429, 503]:
                 r = req_and_log(path, method, data, json)
-        self.send_response(r.status_code)
+        
+        logger.info(f"{method.upper()} {path} {r.status_code}")
+        self.send_response_only(r.status_code)
+        self.send_header('Server', self.version_string())
+        self.send_header('Date', self.date_time_string())
         self.send_header("content-type", r.headers["content-type"])
         self.send_header("content-length", r.headers["content-length"])
         self.end_headers()
@@ -47,7 +80,7 @@ class myHandler(http.server.BaseHTTPRequestHandler):
         self.req(self.path, "post",json=post_body)
     def do_PATCH(self):
         post_body = self.get_body()
-        self.req(self.path, "post",json=post_body)
+        self.req(self.path, "patch",json=post_body)
 
 IP = ""
 PORT = 8000

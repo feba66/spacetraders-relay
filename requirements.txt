@@ -1,6 +1,6 @@
 # fastapi
 # psycopg2-binary
 # pydantic
-# python-dotenv
+python-dotenv
 requests
 # uvicorn
