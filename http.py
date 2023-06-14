@@ -92,8 +92,10 @@ class myHandler(http.server.BaseHTTPRequestHandler):
         post_body = self.get_body()
         self.req(self.path, "patch",json=post_body)
 
-IP = ""
-PORT = 8000
-with socketserver.ThreadingTCPServer((IP, PORT), myHandler) as httpd:
-    print("serving at port", PORT)
-    httpd.serve_forever()
+
+if __name__ == "__main__":
+    IP = ""
+    PORT = 8000
+    with socketserver.ThreadingTCPServer((IP, PORT), myHandler) as httpd:
+        print("serving at port", PORT)
+        httpd.serve_forever()
