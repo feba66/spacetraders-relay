@@ -88,9 +88,11 @@ class myHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Server', self.version_string())
         self.send_header('Date', self.date_time_string())
         self.send_header("content-type", r.headers["content-type"])
-        self.send_header("content-length", r.headers["content-length"])
+        if "content-length" in r.headers:
+            self.send_header("content-length", r.headers["content-length"])
         self.end_headers()
-        self.wfile.write(r.content)
+        if "content-length" in r.headers:
+            self.wfile.write(r.content)
 
     def get_body(self):
         content_len = int(self.headers.get('Content-Length'))
